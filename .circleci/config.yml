@@ -1,0 +1,55 @@
+version: 2.1
+
+executors:
+  rom-executor:
+    docker:
+      - image: variantxyz/rgbds-20200806:cb4fbdfcd534e43a5f8504b405acd7b8b29f5001
+    working_directory: /tmp
+
+jobs:
+  update:
+    executor: rom-executor
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "cf:2d:dc:82:0c:e0:3d:e1:e3:e8:44:b9:e9:77:fb:5c" # Machine User Key
+      - checkout:
+          path: medarot1_translation
+      - run:
+          name: "Get latest text version"
+          working_directory: medarot1_translation
+          command: curl --silent "https://docs.google.com/spreadsheets/d/$TRANSLATION_SHEET_ID/gviz/tq?tqx=out:csv&sheet=Status&range=A1" | tr -d '"' > version.txt
+      - run:
+          name: "Stop if no version change"
+          working_directory: medarot1_translation
+          command: |
+            git add .
+            git diff --staged --quiet && circleci step halt || exit 0
+      - run:
+          name: "Get latest sheet"
+          working_directory: medarot1_translation
+          command: wget -q --no-check-certificate "https://docs.google.com/spreadsheets/d/$TRANSLATION_SHEET_ID/export" -O ./sheet.xlsx
+      - run:
+          name: "Check in changes"
+          working_directory: medarot1_translation
+          command: |
+            git add .
+
+            git config user.email ${USER_EMAIL}
+            git config user.name "CI Bot"
+
+            export VERSION=`cat ./version.txt | tr -d '\n'`
+            git commit -am "Nightly build - ${VERSION}" && git push -u origin HEAD
+
+workflows:
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 19 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - update:
+          name: "Nightly Update"
