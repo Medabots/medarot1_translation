@@ -16,6 +16,10 @@ jobs:
       - checkout:
           path: medarot1_translation
       - run:
+          name: "Pull latest repository"
+          working_directory: medarot1_translation
+          command: git pull
+      - run:
           name: "Get latest text version"
           working_directory: medarot1_translation
           command: curl --silent "https://docs.google.com/spreadsheets/d/$TRANSLATION_SHEET_ID/gviz/tq?tqx=out:csv&sheet=Status&range=A1" | tr -d '"' > version.txt
