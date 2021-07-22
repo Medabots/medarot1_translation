@@ -30,6 +30,12 @@ jobs:
             git add .
             git diff --staged --quiet && circleci step halt || exit 0
       - run:
+          name: "Stop if version string is invalid"
+          working_directory: medarot1_translation
+          command: |
+            export VERSION=`cat ./version.txt | tr -d '\n'`
+            [[ $VERSION=rev* ]] && exit 0 || circleci step halt
+      - run:
           name: "Get latest sheet"
           working_directory: medarot1_translation
           command: wget -q --no-check-certificate "https://docs.google.com/spreadsheets/d/$TRANSLATION_SHEET_ID/export" -O ./sheet.xlsx
