@@ -52,6 +52,9 @@ jobs:
             git commit -am "Nightly build - ${VERSION}" && git push -u origin HEAD
 
 workflows:
+  commit:
+    jobs:
+      - update
   nightly:
     triggers:
       - schedule:
